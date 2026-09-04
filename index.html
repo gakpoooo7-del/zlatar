@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="sr" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Planina Zlatar</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brandDark: '#0F1B2B',
+            textPrimary: '#111827',
+            textSecondary: '#1F2937',
+            accentBronze: '#8C5A2B',
+          },
+          fontFamily: {
+            serif: ['"Cormorant Garamond"', 'Georgia', 'serif'],
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+      background-color: #0F1B2B;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .contrast-glow {
+      text-shadow: 0 1px 3px rgba(255, 255, 255, 0.6), 0 10px 25px rgba(0, 0, 0, 0.15);
+    }
+    .dark-glow {
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
+    }
+  </style>
+
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mp4box@0.5.2/dist/mp4box.all.min.js"></script>
+</head>
+<body class="bg-[#0F1B2B] text-textPrimary antialiased">
+
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    const VIDEO_URL = "./zlatar.mp4";
+
+    const ATTRACTIONS = [
+      {
+        id: "uvac",
+        title: "Kanjon reke Uvac",
+        category: "Priroda",
+        tag: "Rezervat prirode",
+        description: "Jedinstveni meandri i netaknuta priroda koja ostavlja bez daha.",
+        icon: "compass",
+        bgGradient: "from-blue-950/85 to-slate-900/95"
+      },
+      {
+        id: "jezera",
+        title: "Zlatarsko & Radoinjsko Jezero",
+        category: "Jezera",
+        tag: "Voda & Odmor",
+        description: "Kupanje, vožnja čamcem i mirne obale okružene gustim četinarskim šumama.",
+        icon: "waves",
+        bgGradient: "from-teal-950/85 to-slate-900/95"
+      },
+      {
+        id: "staze",
+        title: "Pešačke i biciklističke staze",
+        category: "Aktivnosti",
+        tag: "Rekreacija",
+        description: "Desetine kilometara uređenih staza kroz netaknutu prirodu i čist vazduh.",
+        icon: "map-pin",
+        bgGradient: "from-emerald-950/85 to-slate-900/95"
+      },
+      {
+        id: "vidikovci",
+        title: "Vidikovac Molitva & Zlatar",
+        category: "Vidikovci",
+        tag: "Panoramski pogled",
+        description: "Mesta sa kojih se pružaju najlepši pogledi na brda i meandre u Srbiji.",
+        icon: "eye",
+        bgGradient: "from-amber-950/85 to-slate-900/95"
+      },
+      {
+        id: "gastronomija",
+        title: "Zlatarski sir i domaća kuhinja",
+        category: "Tradicionalno",
+        tag: "Gastro",
+        description: "Autentični specijaliteti, poznati zlatarski sir, heljdopek i svež planinski med.",
+        icon: "utensils",
+        bgGradient: "from-orange-950/85 to-slate-900/95"
+      },
+      {
+        id: "smestaj",
+        title: "Eko brvnare i hoteli",
+        category: "Smeštaj",
+        tag: "Boravak",
+        description: "Udoban smeštaj u tradicionalnom stilu sa modernim pogodnostima za potpun odmor.",
+        icon: "home",
+        bgGradient: "from-indigo-950/85 to-slate-900/95"
+      }
+    ];
+
+    function useVideoScrub(videoSrc) {
+      const videoRef = useRef(null);
+      const canvasRef = useRef(null);
+      const containerRef = useRef(null);
+      const [scrollProgress, setScrollProgress] = useState(0);
+      const [canvasLive, setCanvasLive] = useState(false);
+      const [duration, setDuration] = useState(0);
+
+      const stateRef = useRef({
+        targetTime: 0,
+        currentTime: 0,
+        bank: [],
+        ready: false,
+        reverted: false,
+      });
+
+      useEffect(() => {
+        const updateCanvasSize = () => {
+          const canvas = canvasRef.current;
+          if (!canvas) return;
+          const dpr = window.devicePixelRatio || 1;
+          const rect = canvas.getBoundingClientRect();
+          
+          canvas.width = Math.round(rect.width * dpr);
+          canvas.height = Math.round(rect.height * dpr);
+        };
+
+        updateCanvasSize();
+        window.addEventListener('resize', updateCanvasSize);
+        return () => window.removeEventListener('resize', updateCanvasSize);
+      }, []);
+
+      useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+
+        const handleLoadedMetadata = () => {
+          setDuration(video.duration || 0);
+        };
+
+        video.addEventListener('loadedmetadata', handleLoadedMetadata);
+        if (video.duration) setDuration(video.duration);
+
+        let active = true;
+
+        const cleanupBank = () => {
+          stateRef.current.bank.forEach(item => {
+            if (item.bmp && typeof item.bmp.close === 'function') {
+              item.bmp.close();
+            }
+          });
+          stateRef.current.bank = [];
+        };
+
+        const initFrameBank = async () => {
+          if (!window.VideoDecoder || !window.MP4Box || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            stateRef.current.reverted = true;
+            return;
+          }
+
+          try {
+            const response = await fetch(videoSrc);
+            if (!response.ok) throw new Error('Network response failure');
+            const arrayBuffer = await response.arrayBuffer();
+            arrayBuffer.fileStart = 0;
+
+            const mp4file = MP4Box.createFile();
+            let decoder = null;
+
+            mp4file.onReady = (info) => {
+              if (!active) return;
+              const videoTrack = info.videoTracks[0];
+              if (!videoTrack) return;
+
+              decoder = new VideoDecoder({
+                output: async (frame) => {
+                  if (!active) { 
+                    frame.close(); 
+                    return; 
+                  }
+                  
+                  const ts = frame.timestamp;
+                  try {
+                    const bmp = await createImageBitmap(frame);
+                    if (active) {
+                      stateRef.current.bank.push({ ts, bmp });
+                      stateRef.current.bank.sort((a, b) => a.ts - b.ts);
+                      
+                      if (!stateRef.current.ready && stateRef.current.bank.length > 5) {
+                        stateRef.current.ready = true;
+                        setCanvasLive(true);
+                      }
+                    } else {
+                      bmp.close();
+                    }
+                  } catch (e) {
+                    console.warn("Bitmap conversion failed:", e);
+                  } finally {
+                    frame.close();
+                  }
+                },
+                error: (e) => {
+                  console.warn("VideoDecoder hardware error, falling back:", e);
+                  stateRef.current.reverted = true;
+                }
+              });
+
+              let description = null;
+              try {
+                const trak = mp4file.moov.traks.find(t => t.tkhd.track_id === videoTrack.id);
+                const entry = trak.mdia.minf.stbl.stsd.entries[0];
+                const box = entry.avcC || entry.hvcC || entry.vpcC || entry.av1C;
+                if (box) {
+                  const stream = new MP4Box.DataStream(undefined, 0, MP4Box.DataStream.BIG_ENDIAN);
+                  box.write(stream);
+                  description = new Uint8Array(stream.buffer, 8);
+                }
+              } catch (e) {
+                console.warn("No extra metadata box:", e);
+              }
+
+              decoder.configure({
+                codec: videoTrack.codec,
+                codedWidth: videoTrack.track_width,
+                codedHeight: videoTrack.track_height,
+                description: description
+              });
+
+              mp4file.setExtractionOptions(videoTrack.id);
+              mp4file.start();
+            };
+
+            mp4file.onSamples = (id, user, samples) => {
+              if (!active || !decoder) return;
+              for (const sample of samples) {
+                const chunk = new EncodedVideoChunk({
+                  type: sample.is_sync ? 'key' : 'delta',
+                  timestamp: sample.cts,
+                  duration: sample.duration,
+                  data: sample.data
+                });
+                if (decoder.state === 'configured') decoder.decode(chunk);
+              }
+            };
+
+            mp4file.appendBuffer(arrayBuffer);
+            mp4file.flush();
+          } catch (err) {
+            console.warn("Failed frame bank extraction, falling back to html5 video:", err);
+            stateRef.current.reverted = true;
+          }
+        };
+
+        initFrameBank();
+
+        return () => {
+          active = false;
+          video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+          cleanupBank();
+        };
+      }, [videoSrc]);
+
+      useEffect(() => {
+        let animationFrameId;
+        let lastTime = performance.now();
+
+        const drawCoverImage = (ctx, img, canvasWidth, canvasHeight) => {
+          const imgRatio = img.width / img.height;
+          const canvasRatio = canvasWidth / canvasHeight;
+
+          let renderWidth, renderHeight, offsetX, offsetY;
+
+          if (canvasRatio > imgRatio) {
+            renderWidth = canvasWidth;
+            renderHeight = canvasWidth / imgRatio;
+            offsetX = 0;
+            offsetY = (canvasHeight - renderHeight) / 2;
+          } else {
+            renderWidth = canvasHeight * imgRatio;
+            renderHeight = canvasHeight;
+            offsetX = (canvasWidth - renderWidth) / 2;
+            offsetY = 0;
+          }
+
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, offsetX, offsetY, renderWidth, renderHeight);
+        };
+
+        const loop = (now) => {
+          const dt = Math.min(0.1, (now - lastTime) / 1000);
+          lastTime = now;
+
+          const container = containerRef.current;
+          let progress = 0;
+
+          if (container) {
+            const rect = container.getBoundingClientRect();
+            const totalScrollable = container.offsetHeight - window.innerHeight;
+            if (totalScrollable > 0) {
+              const currentScroll = -rect.top;
+              progress = Math.min(1, Math.max(0, currentScroll / totalScrollable));
+            }
+          }
+
+          setScrollProgress(progress);
+
+          const video = videoRef.current;
+          const canvas = canvasRef.current;
+          const dur = video ? video.duration || duration : duration;
+
+          if (dur > 0) {
+            stateRef.current.targetTime = progress * dur;
+
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+              stateRef.current.currentTime = stateRef.current.targetTime;
+            } else {
+              const LERP_TAU = 8;
+              const diff = stateRef.current.targetTime - stateRef.current.currentTime;
+              stateRef.current.currentTime += diff * (1 - Math.exp(-dt * LERP_TAU));
+              if (Math.abs(diff) < 0.002) {
+                stateRef.current.currentTime = stateRef.current.targetTime;
+              }
+            }
+
+            const curr = stateRef.current.currentTime;
+
+            if (stateRef.current.ready && canvas && !stateRef.current.reverted && stateRef.current.bank.length > 0) {
+              const targetTs = curr * 1e6;
+              const bank = stateRef.current.bank;
+
+              let low = 0, high = bank.length - 1, nearest = 0;
+              while (low <= high) {
+                let mid = (low + high) >> 1;
+                if (bank[mid].ts < targetTs) {
+                  nearest = mid;
+                  low = mid + 1;
+                } else {
+                  high = mid - 1;
+                }
+              }
+
+              const frameObj = bank[nearest];
+              if (frameObj && frameObj.bmp && canvas) {
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                  drawCoverImage(ctx, frameObj.bmp, canvas.width, canvas.height);
+                }
+              }
+            } else if (video) {
+              if (!video.seeking && Math.abs(video.currentTime - curr) > 0.01) {
+                video.currentTime = curr;
+              }
+            }
+          }
+
+          animationFrameId = requestAnimationFrame(loop);
+        };
+
+        animationFrameId = requestAnimationFrame(loop);
+        return () => cancelAnimationFrame(animationFrameId);
+      }, [duration]);
+
+      return { videoRef, canvasRef, containerRef, scrollProgress, canvasLive };
+    }
+
+    function App() {
+      const { videoRef, canvasRef, containerRef, scrollProgress, canvasLive } = useVideoScrub(VIDEO_URL);
+      const [menuOpen, setMenuOpen] = useState(false);
+      const [activeCategory, setActiveCategory] = useState('Sve');
+
+      const p = scrollProgress;
+
+      const s1Opacity = p < 0.20 ? 1 : Math.max(0, 1 - (p - 0.20) / 0.08);
+      const s2Opacity = p < 0.32 ? 0 : p < 0.40 ? (p - 0.32) / 0.08 : p < 0.55 ? 1 : Math.max(0, 1 - (p - 0.55) / 0.08);
+      const s3Opacity = p < 0.67 ? 0 : p < 0.75 ? (p - 0.67) / 0.08 : 1;
+
+      const categories = ['Sve', 'Priroda', 'Jezera', 'Aktivnosti', 'Vidikovci', 'Tradicionalno', 'Smeštaj'];
+
+      const filteredAttractions = activeCategory === 'Sve' 
+        ? ATTRACTIONS 
+        : ATTRACTIONS.filter(item => item.category === activeCategory);
+
+      useEffect(() => {
+        document.body.style.overflow = menuOpen ? 'hidden' : 'auto';
+      }, [menuOpen]);
+
+      useEffect(() => {
+        if (window.lucide) window.lucide.createIcons();
+      });
+
+      return (
+        <div className="w-full bg-[#0F1B2B]">
+          
+          <div ref={containerRef} className="relative h-[500vh] w-full">
+            <div className="sticky top-0 w-full h-screen overflow-hidden">
+              <video
+                ref={videoRef}
+                src={VIDEO_URL}
+                muted
+                playsInline
+                preload="auto"
+                className="absolute inset-0 w-full h-full object-cover z-0"
+              />
+
+              <canvas
+                ref={canvasRef}
+                className={`absolute inset-0 w-full h-full z-10 transition-opacity duration-300 pointer-events-none ${canvasLive ? 'opacity-100' : 'opacity-0'}`}
+              />
+
+              <div className="absolute inset-0 z-20 pointer-events-none flex flex-col justify-between">
+                
+                <nav className="absolute top-0 left-0 right-0 z-50 pointer-events-auto px-6 sm:px-8 md:px-12 pt-8 sm:pt-10 pb-6 flex items-center justify-between text-brandDark bg-gradient-to-b from-white/60 via-white/20 to-transparent backdrop-blur-[2px]">
+                  <div className="hidden lg:flex items-center gap-8 xl:gap-10">
+                    <a href="#zlatar" className="text-xs tracking-[0.2em] uppercase font-bold relative text-brandDark hover:text-black transition-colors contrast-glow">
+                      PLANINA ZLATAR
+                      <span className="absolute -bottom-2 left-0 w-full h-[2px] bg-brandDark"></span>
+                    </a>
+                    <a href="#priroda" className="text-xs tracking-[0.2em] uppercase font-semibold text-brandDark/85 hover:text-black transition-colors contrast-glow">PRIRODA</a>
+                    <a href="#istrazite" className="text-xs tracking-[0.2em] uppercase font-semibold text-brandDark/85 hover:text-black transition-colors contrast-glow">ISTRAŽITE</a>
+                    <a href="#smeštaj" className="text-xs tracking-[0.2em] uppercase font-semibold text-brandDark/85 hover:text-black transition-colors contrast-glow">SMEŠTAJ</a>
+                    <a href="#kontakt" className="text-xs tracking-[0.2em] uppercase font-semibold text-brandDark/85 hover:text-black transition-colors contrast-glow">KONTAKT</a>
+                  </div>
+
+                  <button
+                    onClick={() => setMenuOpen(true)}
+                    className="lg:hidden flex flex-col gap-[5px] p-2 focus:outline-none"
+                    aria-label="Open Menu"
+                  >
+                    <span className="w-6 h-[2px] bg-brandDark"></span>
+                    <span className="w-6 h-[2px] bg-brandDark"></span>
+                    <span className="w-4 h-[2px] bg-brandDark"></span>
+                  </button>
+
+                  <div className="hidden sm:flex items-center gap-6">
+                    <div className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
+                      <span className="text-xs tracking-[0.2em] uppercase font-bold text-brandDark contrast-glow">INFO</span>
+                      <div className="w-5 h-5 rounded-full flex items-center justify-center bg-brandDark text-white">
+                        <i data-lucide="info" className="w-2.5 h-2.5"></i>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => setMenuOpen(true)}
+                      className="text-xs tracking-[0.2em] uppercase font-bold text-brandDark hover:text-black transition-colors focus:outline-none contrast-glow"
+                    >
+                      MENU
+                    </button>
+                  </div>
+                </nav>
+
+                <div className={`fixed inset-0 z-[100] bg-brandDark pointer-events-auto flex flex-col justify-between transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${menuOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
+                  <div className="flex justify-end px-6 sm:px-8 pt-8 sm:pt-12">
+                    <button
+                      onClick={() => setMenuOpen(false)}
+                      className="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center text-white hover:border-white transition-colors"
+                    >
+                      <i data-lucide="x" className="w-4 h-4"></i>
+                    </button>
+                  </div>
+
+                  <div className={`flex flex-col items-center justify-center gap-4 transition-transform duration-500 ${menuOpen ? 'translate-y-0' : '-translate-y-8'}`}>
+                    {['PLANINA ZLATAR', 'PRIRODA', 'ISTRAŽITE', 'SMEŠTAJ', 'KONTAKT'].map((link, idx) => (
+                      <a
+                        key={link}
+                        href={`#${link.toLowerCase().replace(/\s+/g, '-')}`}
+                        onClick={() => setMenuOpen(false)}
+                        className={`font-serif text-2xl sm:text-3xl tracking-wide uppercase px-8 sm:px-12 py-3 transition-colors ${idx === 0 ? 'text-amber-200' : 'text-white/70 hover:text-white'}`}
+                      >
+                        {link}
+                      </a>
+                    ))}
+                  </div>
+
+                  <div className="flex justify-between items-center px-8 sm:px-12 pb-10 text-xs tracking-[0.2em] uppercase text-white/60">
+                    <span className="hover:text-white cursor-pointer">INFO</span>
+                    <span className="hover:text-white cursor-pointer">KONTAKT</span>
+                  </div>
+                </div>
+
+                <div 
+                  className="absolute inset-0 px-6 sm:px-8 md:px-20 lg:px-32 flex flex-col justify-center text-left transition-opacity duration-100 ease-out pointer-events-none"
+                  style={{ opacity: s1Opacity }}
+                >
+                  <div className="max-w-3xl bg-white/30 backdrop-blur-md p-6 sm:p-10 rounded-2xl border border-white/40 shadow-2xl">
+                    <h1 className="font-serif italic text-[clamp(2.5rem,6vw,5.5rem)] font-semibold leading-[1.05] text-[#0F1B2B] tracking-tight">
+                      Planina Zlatar
+                    </h1>
+                    <p className="mt-3 text-xs sm:text-sm tracking-[0.3em] uppercase text-[#1F2937] font-bold">
+                      Mesto gde priroda priča
+                    </p>
+                  </div>
+
+                  <div className="absolute bottom-12 right-6 sm:right-8 md:right-12 pointer-events-auto">
+                    <button className="w-12 h-12 rounded-full bg-brandDark text-white flex items-center justify-center shadow-xl hover:scale-105 transition-all">
+                      <i data-lucide="arrow-right" className="w-4 h-4"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <div 
+                  className="absolute inset-0 px-6 sm:px-8 flex items-center justify-center text-center transition-opacity duration-100 ease-out pointer-events-none"
+                  style={{ opacity: s2Opacity }}
+                >
+                  <div className="max-w-[900px] bg-white/35 backdrop-blur-md p-8 sm:p-12 rounded-3xl border border-white/50 shadow-2xl">
+                    <h2 className="font-serif text-[clamp(1.8rem,4.5vw,4.5rem)] font-medium tracking-wide leading-[1.2] text-[#0F1B2B]">
+                      Upoznajte netaknutu lepotu{" "}
+                      <span className="italic text-[#2D4356]">i spokoj</span>{" "}
+                      <span className="text-[#3A4F66]">zlatarskog kraja</span>
+                    </h2>
+                  </div>
+
+                  <div className="absolute bottom-16 right-6 sm:right-8 md:right-12 flex flex-col items-center gap-4 pointer-events-auto">
+                    <div className="w-12 h-12 rounded-full bg-brandDark text-white flex items-center justify-center shadow-lg">
+                      <i data-lucide="arrow-down" className="w-4 h-4"></i>
+                    </div>
+                    
+                    <div className="mt-4 flex flex-col items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-brandDark"></span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-brandDark/40"></span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-brandDark/40"></span>
+                    </div>
+
+                    <div className="w-10 h-10 rounded-full border border-brandDark/40 flex items-center justify-center text-brandDark mt-2">
+                      <i data-lucide="chevron-up" className="w-4 h-4"></i>
+                    </div>
+                  </div>
+                </div>
+
+                <div 
+                  className="absolute inset-0 px-6 sm:px-8 md:px-20 lg:px-32 flex items-center justify-end text-left transition-opacity duration-100 ease-out pointer-events-none"
+                  style={{ opacity: s3Opacity }}
+                >
+                  <div className="max-w-2xl bg-black/40 backdrop-blur-md p-8 sm:p-12 rounded-3xl border border-white/20 shadow-2xl">
+                    <p className="text-amber-200/90 text-xs sm:text-sm tracking-[0.3em] uppercase mb-3 font-semibold dark-glow">
+                      Zlatar | Uvac
+                    </p>
+                    <h2 className="font-serif italic text-[clamp(2.2rem,4.5vw,4.5rem)] font-normal text-white leading-[1.15] tracking-wide mb-8 dark-glow">
+                      Doživite čaroliju<br />zlatarskih jezera.
+                    </h2>
+
+                    <a href="#istrazite" className="inline-flex items-center gap-4 pointer-events-auto cursor-pointer group">
+                      <span className="text-xs tracking-[0.3em] text-white uppercase group-hover:text-amber-200 transition-colors dark-glow font-semibold">
+                        Istražite ponudu
+                      </span>
+                      <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-brandDark group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                        <i data-lucide="arrow-down" className="w-4 h-4"></i>
+                      </div>
+                    </a>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <section 
+            id="istrazite" 
+            className="relative z-30 text-white py-24 px-6 sm:px-12 md:px-20 border-t border-white/10 bg-cover bg-center bg-fixed"
+            style={{ backgroundImage: "url('./beloglavi.jpg')" }}
+          >
+            <div className="absolute inset-0 bg-[#0F1B2B]/60 z-0"></div>
+
+            <div className="relative z-10 max-w-7xl mx-auto">
+              
+              <div className="text-center max-w-3xl mx-auto mb-16">
+                <span className="text-amber-300 text-xs sm:text-sm tracking-[0.3em] uppercase font-bold dark-glow">
+                  DOŽIVITE NEZABORAVNO
+                </span>
+                <h2 className="font-serif italic text-4xl sm:text-5xl md:text-6xl font-normal mt-3 mb-6 dark-glow">
+                  Šta istražiti na Zlataru?
+                </h2>
+                <p className="text-gray-100 text-sm sm:text-base leading-relaxed dark-glow font-medium">
+                  Od čudesnih meandara Uvca do osvežavajućih borovih šuma i tradicionalnih ukusa — izaberite ono što vas najviše privlači i isplanirajte savršen boravak.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-16">
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveCategory(cat)}
+                    className={`px-5 py-2.5 rounded-full text-xs tracking-wider uppercase font-medium transition-all duration-300 ${
+                      activeCategory === cat
+                        ? 'bg-amber-400 text-brandDark shadow-lg shadow-amber-400/30 font-bold scale-105'
+                        : 'bg-black/60 text-white border border-white/30 hover:bg-black/80 hover:border-white/50'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {filteredAttractions.map((item) => (
+                  <div
+                    key={item.id}
+                    className={`group relative rounded-3xl p-8 border border-white/20 bg-gradient-to-b ${item.bgGradient} backdrop-blur-sm hover:border-amber-400/70 transition-all duration-500 hover:-translate-y-2 flex flex-col justify-between overflow-hidden shadow-2xl`}
+                  >
+                    <div className="relative z-10">
+                      <div className="flex justify-between items-start mb-6">
+                        <span className="px-3 py-1 rounded-full bg-white/10 border border-white/20 text-[10px] tracking-widest uppercase text-amber-200 font-semibold">
+                          {item.tag}
+                        </span>
+                        <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center text-amber-300 group-hover:scale-110 group-hover:bg-amber-400 group-hover:text-brandDark transition-all duration-300">
+                          <i data-lucide={item.icon} className="w-5 h-5"></i>
+                        </div>
+                      </div>
+
+                      <h3 className="font-serif text-2xl font-semibold mb-3 group-hover:text-amber-200 transition-colors">
+                        {item.title}
+                      </h3>
+                      <p className="text-gray-200 text-sm leading-relaxed mb-8">
+                        {item.description}
+                      </p>
+                    </div>
+
+                    <div className="relative z-10 pt-4 border-t border-white/20 flex items-center justify-between">
+                      <span className="text-xs uppercase tracking-widest text-amber-300 font-semibold group-hover:translate-x-1 transition-transform inline-flex items-center gap-2">
+                        Saznaj više 
+                        <i data-lucide="chevron-right" className="w-4 h-4"></i>
+                      </span>
+                    </div>
+
+                    <div className="absolute -right-12 -bottom-12 w-40 h-40 bg-amber-400/10 rounded-full blur-2xl group-hover:bg-amber-400/20 transition-all duration-500"></div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-20 p-8 sm:p-12 rounded-3xl bg-gradient-to-r from-slate-900/90 via-brandDark/95 to-slate-900/90 border border-amber-500/40 text-center flex flex-col items-center justify-center gap-6 shadow-2xl">
+                <h3 className="font-serif text-3xl sm:text-4xl font-semibold italic text-amber-100">
+                  Spremne avanture čekaju na vas
+                </h3>
+                <p className="text-gray-200 text-sm sm:text-base max-w-2xl">
+                  Kontaktirajte lokalne vodiče, rezervišite smeštaj ili saznajte više informacija o turističkim rutama.
+                </p>
+                <a
+                  href="#kontakt"
+                  className="px-8 py-4 bg-amber-400 text-brandDark font-bold text-xs tracking-[0.2em] uppercase rounded-full hover:bg-amber-300 transition-all shadow-xl hover:scale-105"
+                >
+                  Kontaktirajte Turističku Organizaciju
+                </a>
+              </div>
+
+            </div>
+          </section>
+
+          <footer className="relative z-30 bg-black/90 border-t border-white/10 py-12 px-6 text-center text-xs text-gray-400 tracking-wider">
+            <p>© 2026 Planina Zlatar. Sva prava zadržana.</p>
+          </footer>
+
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
