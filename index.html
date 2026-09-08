@@ -7,7 +7,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -23,6 +23,25 @@
           fontFamily: {
             serif: ['"Cormorant Garamond"', 'Georgia', 'serif'],
             sans: ['Inter', 'sans-serif'],
+          },
+          keyframes: {
+            floatSlow: {
+              '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
+              '50%': { transform: 'translateY(-12px) rotate(1deg)' },
+            },
+            pulseGlow: {
+              '0%, 100%': { opacity: '0.3', transform: 'scale(1)' },
+              '50%': { opacity: '0.7', transform: 'scale(1.1)' },
+            },
+            shine: {
+              '0%': { transform: 'translateX(-100%)' },
+              '100%': { transform: 'translateX(200%)' },
+            }
+          },
+          animation: {
+            floatSlow: 'floatSlow 7s ease-in-out infinite',
+            pulseGlow: 'pulseGlow 5s ease-in-out infinite',
+            shine: 'shine 2.5s infinite',
           }
         }
       }
@@ -44,6 +63,58 @@
     .dark-glow {
       text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
     }
+
+    /* Napredne Reveal Animacije */
+    .reveal-item {
+      opacity: 0;
+      transform: translateY(40px) scale(0.95);
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: opacity, transform;
+    }
+    .reveal-item.active {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    /* Stagger efekat za listu */
+    .stagger-child {
+      opacity: 0;
+      transform: translateX(-20px);
+      transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .reveal-item.active .stagger-child:nth-child(1) { transition-delay: 0.2s; opacity: 1; transform: translateX(0); }
+    .reveal-item.active .stagger-child:nth-child(2) { transition-delay: 0.35s; opacity: 1; transform: translateX(0); }
+    .reveal-item.active .stagger-child:nth-child(3) { transition-delay: 0.5s; opacity: 1; transform: translateX(0); }
+
+    /* 3D Container Transform */
+    .tilt-card {
+      transform-style: preserve-3d;
+      perspective: 1000px;
+    }
+    
+    .sheen-overlay {
+      background: linear-gradient(
+        120deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.08) 50%,
+        transparent 100%
+      );
+    }
+
+    /* Custom Scrollbar za Modal */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(251, 191, 36, 0.3);
+      border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(251, 191, 36, 0.6);
+    }
   </style>
 
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -61,62 +132,448 @@
 
     const VIDEO_URL = "./zlatar.mp4";
 
-    const ATTRACTIONS = [
+    const CATEGORY_SECTIONS = [
       {
-        id: "uvac",
-        title: "Kanjon reke Uvac",
-        category: "Priroda",
-        tag: "Rezervat prirode",
-        description: "Jedinstveni meandri i netaknuta priroda koja ostavlja bez daha.",
-        icon: "compass",
-        bgGradient: "from-blue-950/85 to-slate-900/95"
+        id: "priroda",
+        title: "Priroda & Rezervati",
+        badge: "Netaknuta Ekologija",
+        icon: "trees",
+        accent: "border-emerald-500/30 bg-gradient-to-br from-emerald-950/40 via-slate-900/60 to-emerald-900/20",
+        badgeBg: "bg-emerald-500/10 border-emerald-500/30 text-emerald-300",
+        glowColor: "rgba(16, 185, 129, 0.15)",
+        description: "Guste borove i smrčeve šume Zlatara stvaraju specifičnu ružu vetrova. Ovdje se nalazi Specijalni rezervat prirode Uvac, dom retke vrste beloglavog supa.",
+        features: [
+          "Specijalni rezervat prirode Uvac",
+          "Preko 100 vrsta ptica i autohtonih biljaka",
+          "Najčistiji planinski vazduh sa visokom koncentracijom ozona"
+        ],
+        // Detaljni podaci za Modal
+        details: {
+          subtitle: "Jedinstveni ekosistem i stanište kralja visina",
+          longDescription: "Zlatar je poznat po svojim gustim četinarskim šumama, livadama prebogatim lekovitim biljem i izuzetno povoljnoj klimi koja deluje blagotvorno na respiratorne i kardiovaskularne tegobe. Centralna atrakcija regije je Specijalni rezervat prirode 'Uvac', prirodno dobro od izuzetnog značaja.",
+          highlights: [
+            { title: "Beloglavi Sup", desc: "Orao lešinar sa rasponom krila do 3 metra. Uvac je jedno od najvećih gnezdišta u Evropi." },
+            { title: "Ledena Pećina", desc: "Deo pećinskog sistema Uvca dužine preko 6 km sa dvoranama i čistim pećinskim nakitom." },
+            { title: "Šumske Staze Zdravlja", desc: "Kilometri obeleženih staza kroz borovu šumu pogodni za klimatoterapiju." }
+          ],
+          infoBoxes: [
+            { label: "Najbolje vreme za posetu", value: "Maj – Oktobar" },
+            { label: "Ulaznica u Rezervat", value: "300 RSD" },
+            { label: "Vodičke ture", value: "Dostupne svakog dana" }
+          ]
+        }
       },
       {
         id: "jezera",
-        title: "Zlatarsko & Radoinjsko Jezero",
-        category: "Jezera",
-        tag: "Voda & Odmor",
-        description: "Kupanje, vožnja čamcem i mirne obale okružene gustim četinarskim šumama.",
+        title: "Jezera & Vodene Avanture",
+        badge: "Osveženje & Krstarenja",
         icon: "waves",
-        bgGradient: "from-teal-950/85 to-slate-900/95"
+        accent: "border-cyan-500/30 bg-gradient-to-br from-cyan-950/40 via-slate-900/60 to-cyan-900/20",
+        badgeBg: "bg-cyan-500/10 border-cyan-500/30 text-cyan-300",
+        glowColor: "rgba(6, 182, 212, 0.15)",
+        description: "Tri prelepa veštačka jezera — Zlatarsko, Radoinjsko i Sjeničko — nude savršeno mesto za kupanje, vožnju kajaka, krstarenje brodićima i sportski ribolov.",
+        features: [
+          "Krstarenje meandrima Uvca brodićem ili kajakom",
+          "Uređene plaže na Zlatarskom jezeru (Koki Brodu)",
+          "Netaknuti mir i privatne skrivene uvale"
+        ],
+        details: {
+          subtitle: "Smaragdne vode ušukane između planinskih vrhova",
+          longDescription: "Kompleks zlatarskih jezera pruža spektakularne pejzaže i mnoštvo vodenih aktivnosti. Zlatarsko jezero je treće po veličini u Srbiji i glavno je mesto za osveženje i rekreaciju tokom letnjih meseci.",
+          highlights: [
+            { title: "Zlatarsko Jezero (Kokin Brod)", desc: "Popularna pontonska plaža, iznajmljivanje pedalina, kajaka i odbojka na pesku." },
+            { title: "Krstarenje Katamaranom", desc: "Ture brodićima kroz meandre Uvca sa obilaskom pećina u trajanju od 3 do 4 sata." },
+            { title: "Radoinjsko Jezero", desc: "Mirna oaza idealna za kampovanje, ribolov i pobeg od gužve." }
+          ],
+          infoBoxes: [
+            { label: "Krstarenje brodom", value: "od 1.500 RSD" },
+            { label: "Iznajmljivanje kajaka", value: "800 RSD / h" },
+            { label: "Sezona kupanja", value: "Jul – Avgust" }
+          ]
+        }
       },
       {
-        id: "staze",
-        title: "Pešačke i biciklističke staze",
-        category: "Aktivnosti",
-        tag: "Rekreacija",
-        description: "Desetine kilometara uređenih staza kroz netaknutu prirodu i čist vazduh.",
-        icon: "map-pin",
-        bgGradient: "from-emerald-950/85 to-slate-900/95"
+        id: "aktivnosti",
+        title: "Aktivnosti & Sport",
+        badge: "Adrenalin & Rekreacija",
+        icon: "compass",
+        accent: "border-amber-500/30 bg-gradient-to-br from-amber-950/40 via-slate-900/60 to-amber-900/20",
+        badgeBg: "bg-amber-500/10 border-amber-500/30 text-amber-300",
+        glowColor: "rgba(245, 158, 11, 0.15)",
+        description: "Bilo da volite lagane šetnje po obeleženim stazama zdravlja, adrenalinski vožnju quad vozila ili brdski biciklizam, Zlatar nudi sadržaje tokom cele godine.",
+        features: [
+          "Preko 30km obeleženih pešačkih i biciklističkih staza",
+          "Quad (ATV) ture kroz guste šumske predele",
+          "Zimi: Skijanje i vožnja sanki na lokalnim stazama"
+        ],
+        details: {
+          subtitle: "Aktivni odmor za avanturiste i porodice",
+          longDescription: "Zlatar nudi fantastične uslove za sve vrste rekreativaca. Blage padine pogodne su za početnike u brdskom biciklizmu i vožnju quadowa, dok šumske staze pružaju odlične terene za kondicione treninge.",
+          highlights: [
+            { title: "Quad (ATV) Ture", desc: "Vođene ture kroz divlje predele, od šuma Zlatara do vidikovaca na Uvcu." },
+            { title: "Zipline Uvac", desc: "Preletite iznad kanjona Uvca i doživite adrenalinski pogled iz ptičije perspektive." },
+            { title: "Skijanje i Sankanje", desc: "Zimi radi skijaška staza 'Brijani' sa žičarom i osvetljenjem za noćno skijanje." }
+          ],
+          infoBoxes: [
+            { label: "Najam ATV Quad-a", value: "od 40 € / h" },
+            { label: "Zipline vožnja", value: "1.200 RSD" },
+            { label: "Rent a bike", value: "1.000 RSD / dan" }
+          ]
+        }
       },
       {
         id: "vidikovci",
-        title: "Vidikovac Molitva & Zlatar",
-        category: "Vidikovci",
-        tag: "Panoramski pogled",
-        description: "Mesta sa kojih se pružaju najlepši pogledi na brda i meandre u Srbiji.",
+        title: "Panoramski Vidikovci",
+        badge: "Najlepši Pogledi",
         icon: "eye",
-        bgGradient: "from-amber-950/85 to-slate-900/95"
+        accent: "border-indigo-500/30 bg-gradient-to-br from-indigo-950/40 via-slate-900/60 to-indigo-900/20",
+        badgeBg: "bg-indigo-500/10 border-indigo-500/30 text-indigo-300",
+        glowColor: "rgba(99, 102, 241, 0.15)",
+        description: "Sa vidikovaca poput 'Molitve' i 'Velikog vrha' pruža se pogled na meandre koji ostavlja bez daha — jedna od najslikanijih razglednica Srbije.",
+        features: [
+          "Vidikovac Molitva sa pogledom na meandre i gnezda supa",
+          "Vidikovac Zlatar na visini od preko 1.400 metara",
+          "Dostupne drvene platforme za bezbedno posmatranje"
+        ],
+        details: {
+          subtitle: "Pogledi koji ostavljaju bez daha",
+          longDescription: "Zlatarski vidikovci pružaju najlepše pejzažne poglede u celoj jugoistočnoj Evropi. Platforme su urađene od prirodnog drveta i prilagođene za bezbedno posmatranje i fotografisanje.",
+          highlights: [
+            { title: "Vidikovac Molitva", desc: "Najpoznatija tačka sa koje se vidi pun krug meandara Uvca i let beloglavih supova." },
+            { title: "Vidikovac Veliki Vrh", desc: "Nalazi se na suprotnoj strani kanjona i pruža divan obuhvat celog jezera." },
+            { title: "Vidikovac Zlatar (Golo Brdo)", desc: "Najteža tačka planine sa koje se po vedrom danu vide Durmitor i Golija." }
+          ],
+          infoBoxes: [
+            { label: "Pristup Molitvi", desc: "Pešačka staza 1.2km" },
+            { label: "Fotografisanje", value: "Dozvoljeno bez doplate" },
+            { label: "Preporuka", value: "Poseta u zalazak sunca" }
+          ]
+        }
       },
       {
-        id: "gastronomija",
-        title: "Zlatarski sir i domaća kuhinja",
-        category: "Tradicionalno",
-        tag: "Gastro",
-        description: "Autentični specijaliteti, poznati zlatarski sir, heljdopek i svež planinski med.",
+        id: "tradicionalno",
+        title: "Tradicionalna Gastronomija",
+        badge: "Autentični Ukusi",
         icon: "utensils",
-        bgGradient: "from-orange-950/85 to-slate-900/95"
+        accent: "border-orange-500/30 bg-gradient-to-br from-orange-950/40 via-slate-900/60 to-orange-900/20",
+        badgeBg: "bg-orange-500/10 border-orange-500/30 text-orange-300",
+        glowColor: "rgba(249, 115, 22, 0.15)",
+        description: "Gastro ponuda bazirana na domaćoj organskoj hrani. Probajte čuveni Zlatarski sir sa zaštićenim geografskim poreklom i pitu heljdopeku.",
+        features: [
+          "Zlatarski sir od kravljeg i ovčijeg mleka",
+          "Tradicionalna pita heljdopeka sa domaćim kajmakom",
+          "Šumski med, borovnice i domaća rakija"
+        ],
+        details: {
+          subtitle: "Organski specijaliteti zlatarskih domaćina",
+          longDescription: "Hrana na Zlataru se i dalje priprema po recepturama starim stotinama godina. Zbog nadmorske visine i čistih pašnjaka, mlecni i mesni proizvodi sa ove planine imaju jedinstven ukus.",
+          highlights: [
+            { title: "Zlatarski Sir", desc: "Autohtoni kriški sir sa geografskim poreklom, zri u drvenim kacijama." },
+            { title: "Heljdopeka", desc: "Tradicionalna pita od heljdinog brašna, pečena u saču i prelivena kajmakom i sirom." },
+            { title: "Jagnjetina ispod Sača", desc: "Sočno meso pripremano na laganoj vatri po više sati." }
+          ],
+          infoBoxes: [
+            { label: "Prosečan obrok", value: "1.200 – 2.000 RSD" },
+            { label: "Domaći sir (kg)", value: "oko 1.000 RSD" },
+            { label: "Preporuka", value: "Domaćinstvo na selu" }
+          ]
+        }
       },
       {
         id: "smestaj",
-        title: "Eko brvnare i hoteli",
-        category: "Smeštaj",
-        tag: "Boravak",
-        description: "Udoban smeštaj u tradicionalnom stilu sa modernim pogodnostima za potpun odmor.",
+        title: "Smeštaj & Planinski Mir",
+        badge: "Odmor i Komfor",
         icon: "home",
-        bgGradient: "from-indigo-950/85 to-slate-900/95"
+        accent: "border-purple-500/30 bg-gradient-to-br from-purple-950/40 via-slate-900/60 to-purple-900/20",
+        badgeBg: "bg-purple-500/10 border-purple-500/30 text-purple-300",
+        glowColor: "rgba(168, 85, 247, 0.15)",
+        description: "Od autentičnih drvenih eko-brvnara u šumi do savremenih apartmana i hotela sa spa centrima — izaberite ambijent po svojoj meri.",
+        features: [
+          "Brvnare građene od prirodnog zlatarskog bora",
+          "Smeštaj sa pogledom na šumu ili jezero",
+          "Moderni wellness i spa sadržaji"
+        ],
+        details: {
+          subtitle: "Topao planinski ambijent prilagođen svakom gostu",
+          longDescription: "Bilo da tražite intimnu drvenu kućicu izolovanu u miru borove šume ili moderan apartmanski smeštaj u blizini centra sa wellness sadržajima, Zlatar nudi široku ponudu.",
+          highlights: [
+            { title: "Eko Brvnare", desc: "Autentične drvene kuće od zlatarske smrče sa kaminom i terasom." },
+            { title: "Hotel & Spa", desc: "Luksuzni hoteli sa zatvorenim bazenima, saunama i masažama." },
+            { title: "Seoska Domaćinstva", desc: "Smeštaj kod lokalnih domaćina uz uključen domaći doručak." }
+          ],
+          infoBoxes: [
+            { label: "Cena noćenja", value: "od 30 € / noć" },
+            { label: "Porodični paketi", value: "Popusti do 20%" },
+            { label: "Grejanje", value: "Kamin / Centralno" }
+          ]
+        }
       }
     ];
+
+    // MODAL POP-UP KOMPONENTA ZA DETALJAN PRIKAZ
+    function DetailModal({ section, onClose }) {
+      if (!section) return null;
+      const { details, title, badge, icon, accent } = section;
+
+      useEffect(() => {
+        const handleKeyDown = (e) => {
+          if (e.key === 'Escape') onClose();
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+      }, [onClose]);
+
+      return (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 md:p-10 animate-fadeIn">
+          {/* Backdrop Blur */}
+          <div 
+            onClick={onClose}
+            className="absolute inset-0 bg-black/80 backdrop-blur-xl transition-opacity duration-300"
+          ></div>
+
+          {/* Modal Content Box */}
+          <div className="relative w-full max-w-4xl max-h-[90vh] bg-[#0F1B2B] border border-amber-400/40 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col z-10 custom-scrollbar overflow-y-auto">
+            
+            {/* Modal Header */}
+            <div className="sticky top-0 z-20 bg-[#0F1B2B]/90 backdrop-blur-md px-6 sm:px-10 py-6 border-b border-white/10 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-amber-400/20 border border-amber-400/40 flex items-center justify-center text-amber-300">
+                  <i data-lucide={icon} className="w-5 h-5"></i>
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase tracking-[0.25em] text-amber-300 font-bold">{badge}</span>
+                  <h3 className="font-serif text-2xl sm:text-3xl font-semibold text-white">{title}</h3>
+                </div>
+              </div>
+
+              <button 
+                onClick={onClose}
+                className="w-10 h-10 rounded-full bg-white/5 border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-all"
+              >
+                <i data-lucide="x" className="w-5 h-5"></i>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 sm:p-10 space-y-8">
+              
+              {/* Podnaslov i Glavni Tekst */}
+              <div>
+                <h4 className="font-serif italic text-xl sm:text-2xl text-amber-200/90 mb-3">
+                  "{details.subtitle}"
+                </h4>
+                <p className="text-gray-300 leading-relaxed font-light text-sm sm:text-base">
+                  {details.longDescription}
+                </p>
+              </div>
+
+              {/* Info Badges Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {details.infoBoxes.map((box, idx) => (
+                  <div key={idx} className="bg-white/5 border border-white/10 p-4 rounded-2xl text-center">
+                    <span className="text-[11px] uppercase tracking-wider text-gray-400 block mb-1">{box.label}</span>
+                    <span className="text-amber-300 font-bold text-base">{box.value}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Glavne Atrakcije / Highlight-i */}
+              <div>
+                <h5 className="text-xs uppercase tracking-[0.25em] text-amber-400 font-bold mb-4">
+                  Sve Što Treba Da Znate & Atrakcije
+                </h5>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {details.highlights.map((item, idx) => (
+                    <div key={idx} className="p-5 rounded-2xl bg-gradient-to-b from-white/10 to-white/5 border border-white/10 hover:border-amber-400/30 transition-colors">
+                      <div className="w-7 h-7 rounded-full bg-amber-400/20 text-amber-300 flex items-center justify-center text-xs font-bold mb-3">
+                        0{idx + 1}
+                      </div>
+                      <h6 className="font-semibold text-white mb-2 text-base">{item.title}</h6>
+                      <p className="text-xs text-gray-300 leading-relaxed font-light">{item.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Akcije na dnu Modala */}
+              <div className="pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <span className="text-xs text-gray-400">Želite više informacija ili organizovanu turu?</span>
+                <a
+                  href="#kontakt"
+                  onClick={onClose}
+                  className="w-full sm:w-auto px-8 py-3.5 bg-amber-400 text-brandDark text-center rounded-full font-bold text-xs uppercase tracking-[0.2em] hover:bg-amber-300 transition-all shadow-[0_0_20px_rgba(251,191,36,0.3)]"
+                >
+                  Rezervišite / Kontaktirajte
+                </a>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      );
+    }
+
+    // Canvas sa lebdećim česticama
+    function BackgroundParticles() {
+      const canvasRef = useRef(null);
+
+      useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let animationFrameId;
+
+        const resizeCanvas = () => {
+          canvas.width = canvas.parentElement.clientWidth;
+          canvas.height = canvas.parentElement.clientHeight;
+        };
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        const particles = Array.from({ length: 45 }, () => ({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          radius: Math.random() * 2 + 0.5,
+          alpha: Math.random() * 0.5 + 0.2,
+          speedY: - (Math.random() * 0.4 + 0.1),
+          speedX: (Math.random() - 0.5) * 0.2
+        }));
+
+        const render = () => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          particles.forEach(p => {
+            p.y += p.speedY;
+            p.x += p.speedX;
+
+            if (p.y < 0) {
+              p.y = canvas.height;
+              p.x = Math.random() * canvas.width;
+            }
+
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(251, 191, 36, ${p.alpha})`;
+            ctx.fill();
+          });
+
+          animationFrameId = requestAnimationFrame(render);
+        };
+
+        render();
+
+        return () => {
+          window.removeEventListener('resize', resizeCanvas);
+          cancelAnimationFrame(animationFrameId);
+        };
+      }, []);
+
+      return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-0 opacity-60" />;
+    }
+
+    // Interactive 3D Card Component
+    function InteractiveCard({ sec, isEven, onOpenDetails }) {
+      const cardRef = useRef(null);
+      const [transform, setTransform] = useState('perspective(1000px) rotateX(0deg) rotateY(0deg)');
+      const [glowPos, setGlowPos] = useState({ x: 50, y: 50 });
+
+      const handleMouseMove = (e) => {
+        if (!cardRef.current) return;
+        const rect = cardRef.current.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+
+        const rotateX = ((y - centerY) / centerY) * -5;
+        const rotateY = ((x - centerX) / centerX) * 5;
+
+        setTransform(`perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.01, 1.01, 1.01)`);
+        setGlowPos({ x: (x / rect.width) * 100, y: (y / rect.height) * 100 });
+      };
+
+      const handleMouseLeave = () => {
+        setTransform('perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)');
+      };
+
+      return (
+        <section
+          id={sec.id}
+          ref={cardRef}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+          style={{ transform, transition: 'transform 0.15s ease-out' }}
+          className={`reveal-item tilt-card rounded-3xl border ${sec.accent} backdrop-blur-2xl p-8 sm:p-12 md:p-16 transition-all duration-500 hover:border-amber-400/50 shadow-[0_15px_40px_rgba(0,0,0,0.6)] relative overflow-hidden group`}
+        >
+          {/* Dynamic Radial Glow */}
+          <div
+            className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-0"
+            style={{
+              background: `radial-gradient(600px circle at ${glowPos.x}% ${glowPos.y}%, ${sec.glowColor}, transparent 40%)`
+            }}
+          ></div>
+
+          {/* Sheen Overlay */}
+          <div className="absolute inset-0 sheen-overlay opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none z-0"></div>
+
+          <div className={`relative z-10 flex flex-col lg:flex-row items-start gap-12 ${isEven ? '' : 'lg:flex-row-reverse'}`}>
+            
+            {/* Tekstualni Sadržaj */}
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-6">
+                <span className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest border backdrop-blur-md shadow-lg ${sec.badgeBg}`}>
+                  {sec.badge}
+                </span>
+              </div>
+
+              <h3 className="font-serif text-3xl sm:text-5xl font-semibold mb-6 text-white group-hover:text-amber-200 transition-colors duration-300">
+                {sec.title}
+              </h3>
+
+              <p className="text-gray-300 text-base sm:text-lg leading-relaxed font-light mb-8">
+                {sec.description}
+              </p>
+
+              {/* Lista sa Stagger Animacijom */}
+              <div className="space-y-4 mb-8">
+                {sec.features.map((feat, fIdx) => (
+                  <div key={fIdx} className="stagger-child flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-amber-400/10 border border-amber-400/40 flex items-center justify-center text-amber-300 shrink-0 mt-0.5 group-hover:border-amber-400 group-hover:scale-110 transition-all duration-300">
+                      <i data-lucide="check" className="w-3.5 h-3.5"></i>
+                    </div>
+                    <span className="text-sm sm:text-base text-gray-200 font-medium">
+                      {feat}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* DUGME ZA OTVARANJE DETALJA */}
+              <button
+                onClick={() => onOpenDetails(sec)}
+                className="inline-flex items-center gap-3 text-xs uppercase tracking-[0.25em] font-bold text-amber-300 hover:text-white transition-colors group/btn cursor-pointer focus:outline-none"
+              >
+                <span>Saznaj više o ovoj ponudi</span>
+                <i data-lucide="arrow-right" className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform duration-300"></i>
+              </button>
+            </div>
+
+            {/* Vizuelni Blok Sa Ikonom */}
+            <div className="w-full lg:w-80 h-64 lg:h-auto rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center justify-center p-8 text-center relative group-hover:border-amber-400/30 transition-all duration-500 shrink-0 shadow-inner">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-400/20 to-amber-600/10 border border-amber-400/30 flex items-center justify-center text-amber-300 mb-6 group-hover:scale-110 group-hover:bg-amber-400 group-hover:text-brandDark transition-all duration-500 shadow-[0_0_25px_rgba(251,191,36,0.2)]">
+                <i data-lucide={sec.icon} className="w-10 h-10"></i>
+              </div>
+              <span className="text-xs uppercase tracking-widest text-amber-200/80 font-bold">
+                {sec.title}
+              </span>
+            </div>
+
+          </div>
+        </section>
+      );
+    }
 
     function useVideoScrub(videoSrc) {
       const videoRef = useRef(null);
@@ -140,7 +597,6 @@
           if (!canvas) return;
           const dpr = window.devicePixelRatio || 1;
           const rect = canvas.getBoundingClientRect();
-          
           canvas.width = Math.round(rect.width * dpr);
           canvas.height = Math.round(rect.height * dpr);
         };
@@ -154,10 +610,7 @@
         const video = videoRef.current;
         if (!video) return;
 
-        const handleLoadedMetadata = () => {
-          setDuration(video.duration || 0);
-        };
-
+        const handleLoadedMetadata = () => setDuration(video.duration || 0);
         video.addEventListener('loadedmetadata', handleLoadedMetadata);
         if (video.duration) setDuration(video.duration);
 
@@ -165,9 +618,7 @@
 
         const cleanupBank = () => {
           stateRef.current.bank.forEach(item => {
-            if (item.bmp && typeof item.bmp.close === 'function') {
-              item.bmp.close();
-            }
+            if (item.bmp && typeof item.bmp.close === 'function') item.bmp.close();
           });
           stateRef.current.bank = [];
         };
@@ -180,7 +631,7 @@
 
           try {
             const response = await fetch(videoSrc);
-            if (!response.ok) throw new Error('Network response failure');
+            if (!response.ok) throw new Error('Network error');
             const arrayBuffer = await response.arrayBuffer();
             arrayBuffer.fileStart = 0;
 
@@ -194,35 +645,21 @@
 
               decoder = new VideoDecoder({
                 output: async (frame) => {
-                  if (!active) { 
-                    frame.close(); 
-                    return; 
-                  }
-                  
+                  if (!active) { frame.close(); return; }
                   const ts = frame.timestamp;
                   try {
                     const bmp = await createImageBitmap(frame);
                     if (active) {
                       stateRef.current.bank.push({ ts, bmp });
                       stateRef.current.bank.sort((a, b) => a.ts - b.ts);
-                      
                       if (!stateRef.current.ready && stateRef.current.bank.length > 5) {
                         stateRef.current.ready = true;
                         setCanvasLive(true);
                       }
-                    } else {
-                      bmp.close();
-                    }
-                  } catch (e) {
-                    console.warn("Bitmap conversion failed:", e);
-                  } finally {
-                    frame.close();
-                  }
+                    } else { bmp.close(); }
+                  } catch (e) { console.warn(e); } finally { frame.close(); }
                 },
-                error: (e) => {
-                  console.warn("VideoDecoder hardware error, falling back:", e);
-                  stateRef.current.reverted = true;
-                }
+                error: () => { stateRef.current.reverted = true; }
               });
 
               let description = null;
@@ -235,9 +672,7 @@
                   box.write(stream);
                   description = new Uint8Array(stream.buffer, 8);
                 }
-              } catch (e) {
-                console.warn("No extra metadata box:", e);
-              }
+              } catch (e) {}
 
               decoder.configure({
                 codec: videoTrack.codec,
@@ -266,7 +701,6 @@
             mp4file.appendBuffer(arrayBuffer);
             mp4file.flush();
           } catch (err) {
-            console.warn("Failed frame bank extraction, falling back to html5 video:", err);
             stateRef.current.reverted = true;
           }
         };
@@ -287,7 +721,6 @@
         const drawCoverImage = (ctx, img, canvasWidth, canvasHeight) => {
           const imgRatio = img.width / img.height;
           const canvasRatio = canvasWidth / canvasHeight;
-
           let renderWidth, renderHeight, offsetX, offsetY;
 
           if (canvasRatio > imgRatio) {
@@ -318,8 +751,7 @@
             const rect = container.getBoundingClientRect();
             const totalScrollable = container.offsetHeight - window.innerHeight;
             if (totalScrollable > 0) {
-              const currentScroll = -rect.top;
-              progress = Math.min(1, Math.max(0, currentScroll / totalScrollable));
+              progress = Math.min(1, Math.max(0, -rect.top / totalScrollable));
             }
           }
 
@@ -331,41 +763,24 @@
 
           if (dur > 0) {
             stateRef.current.targetTime = progress * dur;
-
-            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-              stateRef.current.currentTime = stateRef.current.targetTime;
-            } else {
-              const LERP_TAU = 8;
-              const diff = stateRef.current.targetTime - stateRef.current.currentTime;
-              stateRef.current.currentTime += diff * (1 - Math.exp(-dt * LERP_TAU));
-              if (Math.abs(diff) < 0.002) {
-                stateRef.current.currentTime = stateRef.current.targetTime;
-              }
-            }
+            const LERP_TAU = 8;
+            const diff = stateRef.current.targetTime - stateRef.current.currentTime;
+            stateRef.current.currentTime += diff * (1 - Math.exp(-dt * LERP_TAU));
 
             const curr = stateRef.current.currentTime;
 
             if (stateRef.current.ready && canvas && !stateRef.current.reverted && stateRef.current.bank.length > 0) {
               const targetTs = curr * 1e6;
               const bank = stateRef.current.bank;
-
               let low = 0, high = bank.length - 1, nearest = 0;
               while (low <= high) {
                 let mid = (low + high) >> 1;
-                if (bank[mid].ts < targetTs) {
-                  nearest = mid;
-                  low = mid + 1;
-                } else {
-                  high = mid - 1;
-                }
+                if (bank[mid].ts < targetTs) { nearest = mid; low = mid + 1; } else { high = mid - 1; }
               }
-
               const frameObj = bank[nearest];
               if (frameObj && frameObj.bmp && canvas) {
                 const ctx = canvas.getContext('2d');
-                if (ctx) {
-                  drawCoverImage(ctx, frameObj.bmp, canvas.width, canvas.height);
-                }
+                if (ctx) drawCoverImage(ctx, frameObj.bmp, canvas.width, canvas.height);
               }
             } else if (video) {
               if (!video.seeking && Math.abs(video.currentTime - curr) > 0.01) {
@@ -387,31 +802,38 @@
     function App() {
       const { videoRef, canvasRef, containerRef, scrollProgress, canvasLive } = useVideoScrub(VIDEO_URL);
       const [menuOpen, setMenuOpen] = useState(false);
-      const [activeCategory, setActiveCategory] = useState('Sve');
+      const [activeModalSection, setActiveModalSection] = useState(null);
 
       const p = scrollProgress;
-
       const s1Opacity = p < 0.20 ? 1 : Math.max(0, 1 - (p - 0.20) / 0.08);
       const s2Opacity = p < 0.32 ? 0 : p < 0.40 ? (p - 0.32) / 0.08 : p < 0.55 ? 1 : Math.max(0, 1 - (p - 0.55) / 0.08);
       const s3Opacity = p < 0.67 ? 0 : p < 0.75 ? (p - 0.67) / 0.08 : 1;
 
-      const categories = ['Sve', 'Priroda', 'Jezera', 'Aktivnosti', 'Vidikovci', 'Tradicionalno', 'Smeštaj'];
-
-      const filteredAttractions = activeCategory === 'Sve' 
-        ? ATTRACTIONS 
-        : ATTRACTIONS.filter(item => item.category === activeCategory);
-
       useEffect(() => {
-        document.body.style.overflow = menuOpen ? 'hidden' : 'auto';
-      }, [menuOpen]);
+        document.body.style.overflow = (menuOpen || activeModalSection) ? 'hidden' : 'auto';
+      }, [menuOpen, activeModalSection]);
 
       useEffect(() => {
         if (window.lucide) window.lucide.createIcons();
       });
 
+      useEffect(() => {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('active');
+            }
+          });
+        }, { threshold: 0.12 });
+
+        document.querySelectorAll('.reveal-item').forEach(el => observer.observe(el));
+        return () => observer.disconnect();
+      }, []);
+
       return (
         <div className="w-full bg-[#0F1B2B]">
           
+          {/* Hero Video Scrub Section */}
           <div ref={containerRef} className="relative h-[500vh] w-full">
             <div className="sticky top-0 w-full h-screen overflow-hidden">
               <video
@@ -437,9 +859,10 @@
                       <span className="absolute -bottom-2 left-0 w-full h-[2px] bg-brandDark"></span>
                     </a>
                     <a href="#priroda" className="text-xs tracking-[0.2em] uppercase font-semibold text-brandDark/85 hover:text-black transition-colors contrast-glow">PRIRODA</a>
-                    <a href="#istrazite" className="text-xs tracking-[0.2em] uppercase font-semibold text-brandDark/85 hover:text-black transition-colors contrast-glow">ISTRAŽITE</a>
-                    <a href="#smeštaj" className="text-xs tracking-[0.2em] uppercase font-semibold text-brandDark/85 hover:text-black transition-colors contrast-glow">SMEŠTAJ</a>
-                    <a href="#kontakt" className="text-xs tracking-[0.2em] uppercase font-semibold text-brandDark/85 hover:text-black transition-colors contrast-glow">KONTAKT</a>
+                    <a href="#jezera" className="text-xs tracking-[0.2em] uppercase font-semibold text-brandDark/85 hover:text-black transition-colors contrast-glow">JEZERA</a>
+                    <a href="#aktivnosti" className="text-xs tracking-[0.2em] uppercase font-semibold text-brandDark/85 hover:text-black transition-colors contrast-glow">AKTIVNOSTI</a>
+                    <a href="#vidikovci" className="text-xs tracking-[0.2em] uppercase font-semibold text-brandDark/85 hover:text-black transition-colors contrast-glow">VIDIKOVCI</a>
+                    <a href="#smestaj" className="text-xs tracking-[0.2em] uppercase font-semibold text-brandDark/85 hover:text-black transition-colors contrast-glow">SMEŠTAJ</a>
                   </div>
 
                   <button
@@ -459,7 +882,7 @@
                         <i data-lucide="info" className="w-2.5 h-2.5"></i>
                       </div>
                     </div>
-                    <button 
+                    <button
                       onClick={() => setMenuOpen(true)}
                       className="text-xs tracking-[0.2em] uppercase font-bold text-brandDark hover:text-black transition-colors focus:outline-none contrast-glow"
                     >
@@ -468,6 +891,7 @@
                   </div>
                 </nav>
 
+                {/* Mobile Navigation */}
                 <div className={`fixed inset-0 z-[100] bg-brandDark pointer-events-auto flex flex-col justify-between transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${menuOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
                   <div className="flex justify-end px-6 sm:px-8 pt-8 sm:pt-12">
                     <button
@@ -479,25 +903,25 @@
                   </div>
 
                   <div className={`flex flex-col items-center justify-center gap-4 transition-transform duration-500 ${menuOpen ? 'translate-y-0' : '-translate-y-8'}`}>
-                    {['PLANINA ZLATAR', 'PRIRODA', 'ISTRAŽITE', 'SMEŠTAJ', 'KONTAKT'].map((link, idx) => (
+                    {['PRIRODA', 'JEZERA', 'AKTIVNOSTI', 'VIDIKOVCI', 'TRADICIONALNO', 'SMEŠTAJ'].map((link) => (
                       <a
                         key={link}
-                        href={`#${link.toLowerCase().replace(/\s+/g, '-')}`}
+                        href={`#${link.toLowerCase()}`}
                         onClick={() => setMenuOpen(false)}
-                        className={`font-serif text-2xl sm:text-3xl tracking-wide uppercase px-8 sm:px-12 py-3 transition-colors ${idx === 0 ? 'text-amber-200' : 'text-white/70 hover:text-white'}`}
+                        className="font-serif text-2xl sm:text-3xl tracking-wide uppercase px-8 py-2 text-white/80 hover:text-amber-300 transition-colors"
                       >
                         {link}
                       </a>
                     ))}
                   </div>
 
-                  <div className="flex justify-between items-center px-8 sm:px-12 pb-10 text-xs tracking-[0.2em] uppercase text-white/60">
-                    <span className="hover:text-white cursor-pointer">INFO</span>
-                    <span className="hover:text-white cursor-pointer">KONTAKT</span>
+                  <div className="flex flex-col sm:flex-row justify-between items-center gap-2 px-8 sm:px-12 pb-10 text-xs tracking-[0.2em] uppercase text-white/60">
+                    <span>ZLATAR 2026</span>
+                    <span className="text-amber-300/80 font-semibold tracking-[0.25em]">DESIGN BY TATOVICH</span>
                   </div>
                 </div>
 
-                <div 
+                <div
                   className="absolute inset-0 px-6 sm:px-8 md:px-20 lg:px-32 flex flex-col justify-center text-left transition-opacity duration-100 ease-out pointer-events-none"
                   style={{ opacity: s1Opacity }}
                 >
@@ -509,15 +933,9 @@
                       Mesto gde priroda priča
                     </p>
                   </div>
-
-                  <div className="absolute bottom-12 right-6 sm:right-8 md:right-12 pointer-events-auto">
-                    <button className="w-12 h-12 rounded-full bg-brandDark text-white flex items-center justify-center shadow-xl hover:scale-105 transition-all">
-                      <i data-lucide="arrow-right" className="w-4 h-4"></i>
-                    </button>
-                  </div>
                 </div>
 
-                <div 
+                <div
                   className="absolute inset-0 px-6 sm:px-8 flex items-center justify-center text-center transition-opacity duration-100 ease-out pointer-events-none"
                   style={{ opacity: s2Opacity }}
                 >
@@ -528,25 +946,9 @@
                       <span className="text-[#3A4F66]">zlatarskog kraja</span>
                     </h2>
                   </div>
-
-                  <div className="absolute bottom-16 right-6 sm:right-8 md:right-12 flex flex-col items-center gap-4 pointer-events-auto">
-                    <div className="w-12 h-12 rounded-full bg-brandDark text-white flex items-center justify-center shadow-lg">
-                      <i data-lucide="arrow-down" className="w-4 h-4"></i>
-                    </div>
-                    
-                    <div className="mt-4 flex flex-col items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-brandDark"></span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-brandDark/40"></span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-brandDark/40"></span>
-                    </div>
-
-                    <div className="w-10 h-10 rounded-full border border-brandDark/40 flex items-center justify-center text-brandDark mt-2">
-                      <i data-lucide="chevron-up" className="w-4 h-4"></i>
-                    </div>
-                  </div>
                 </div>
 
-                <div 
+                <div
                   className="absolute inset-0 px-6 sm:px-8 md:px-20 lg:px-32 flex items-center justify-end text-left transition-opacity duration-100 ease-out pointer-events-none"
                   style={{ opacity: s3Opacity }}
                 >
@@ -555,12 +957,12 @@
                       Zlatar | Uvac
                     </p>
                     <h2 className="font-serif italic text-[clamp(2.2rem,4.5vw,4.5rem)] font-normal text-white leading-[1.15] tracking-wide mb-8 dark-glow">
-                      Doživite čaroliju<br />zlatarskih jezera.
+                      Otkrijte sve lepote<br />zlatarske regije.
                     </h2>
 
-                    <a href="#istrazite" className="inline-flex items-center gap-4 pointer-events-auto cursor-pointer group">
+                    <a href="#priroda" className="inline-flex items-center gap-4 pointer-events-auto cursor-pointer group">
                       <span className="text-xs tracking-[0.3em] text-white uppercase group-hover:text-amber-200 transition-colors dark-glow font-semibold">
-                        Istražite ponudu
+                        Kreni u obilazak
                       </span>
                       <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-brandDark group-hover:scale-110 transition-transform duration-300 shadow-lg">
                         <i data-lucide="arrow-down" className="w-4 h-4"></i>
@@ -573,99 +975,81 @@
             </div>
           </div>
 
-          <section 
-            id="istrazite" 
-            className="relative z-30 text-white py-24 px-6 sm:px-12 md:px-20 border-t border-white/10 bg-cover bg-center bg-fixed"
+          {/* TEMATSKI BLOKOVI */}
+          <div 
+            className="relative z-30 text-white bg-cover bg-center bg-fixed border-t border-white/10 overflow-hidden"
             style={{ backgroundImage: "url('./beloglavi.jpg')" }}
           >
-            <div className="absolute inset-0 bg-[#0F1B2B]/60 z-0"></div>
+            <div className="absolute inset-0 bg-gradient-to-b from-[#0F1B2B]/95 via-[#0F1B2B]/90 to-[#0F1B2B]/95 z-0"></div>
 
-            <div className="relative z-10 max-w-7xl mx-auto">
+            <BackgroundParticles />
+
+            <div className="relative z-10 max-w-7xl mx-auto px-6 sm:px-12 py-24">
               
-              <div className="text-center max-w-3xl mx-auto mb-16">
-                <span className="text-amber-300 text-xs sm:text-sm tracking-[0.3em] uppercase font-bold dark-glow">
-                  DOŽIVITE NEZABORAVNO
+              <div className="text-center max-w-3xl mx-auto mb-28 reveal-item">
+                <span className="text-amber-400 text-xs tracking-[0.35em] uppercase font-bold block mb-4 animate-pulseGlow">
+                  ISTRAŽITE REGION
                 </span>
-                <h2 className="font-serif italic text-4xl sm:text-5xl md:text-6xl font-normal mt-3 mb-6 dark-glow">
-                  Šta istražiti na Zlataru?
+                <h2 className="font-serif italic text-4xl sm:text-6xl md:text-7xl text-white font-normal dark-glow">
+                  Priroda, Avantura & Tradicija
                 </h2>
-                <p className="text-gray-100 text-sm sm:text-base leading-relaxed dark-glow font-medium">
-                  Od čudesnih meandara Uvca do osvežavajućih borovih šuma i tradicionalnih ukusa — izaberite ono što vas najviše privlači i isplanirajte savršen boravak.
-                </p>
+                <div className="w-20 h-[2px] bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto mt-6"></div>
               </div>
 
-              <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-16">
-                {categories.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setActiveCategory(cat)}
-                    className={`px-5 py-2.5 rounded-full text-xs tracking-wider uppercase font-medium transition-all duration-300 ${
-                      activeCategory === cat
-                        ? 'bg-amber-400 text-brandDark shadow-lg shadow-amber-400/30 font-bold scale-105'
-                        : 'bg-black/60 text-white border border-white/30 hover:bg-black/80 hover:border-white/50'
-                    }`}
-                  >
-                    {cat}
-                  </button>
+              <div className="space-y-28">
+                {CATEGORY_SECTIONS.map((sec, idx) => (
+                  <InteractiveCard 
+                    key={sec.id} 
+                    sec={sec} 
+                    isEven={idx % 2 === 0} 
+                    onOpenDetails={(sectionData) => setActiveModalSection(sectionData)}
+                  />
                 ))}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {filteredAttractions.map((item) => (
-                  <div
-                    key={item.id}
-                    className={`group relative rounded-3xl p-8 border border-white/20 bg-gradient-to-b ${item.bgGradient} backdrop-blur-sm hover:border-amber-400/70 transition-all duration-500 hover:-translate-y-2 flex flex-col justify-between overflow-hidden shadow-2xl`}
+              <div className="mt-36 reveal-item text-center">
+                <div className="relative p-12 sm:p-20 rounded-3xl bg-gradient-to-r from-amber-500/10 via-amber-400/20 to-amber-500/10 border border-amber-400/30 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-96 h-96 bg-amber-400/10 rounded-full blur-3xl animate-pulseGlow"></div>
+                  
+                  <h3 className="font-serif italic text-3xl sm:text-5xl text-white mb-6 relative z-10">
+                    Planirate posetu Zlataru?
+                  </h3>
+                  <p className="text-gray-300 max-w-xl mx-auto mb-10 text-sm sm:text-base font-light relative z-10">
+                    Organizujte vaš idealan vikend ili odmor uz našu pomoć. Informacije o smeštaju, vodičima i izletima na jednom mestu.
+                  </p>
+                  <a
+                    href="#kontakt"
+                    className="relative z-10 inline-block px-10 py-5 bg-amber-400 text-brandDark rounded-full font-bold text-xs uppercase tracking-[0.2em] hover:bg-amber-300 transition-all shadow-[0_0_30px_rgba(251,191,36,0.4)] hover:shadow-[0_0_50px_rgba(251,191,36,0.7)] hover:scale-105 active:scale-95"
                   >
-                    <div className="relative z-10">
-                      <div className="flex justify-between items-start mb-6">
-                        <span className="px-3 py-1 rounded-full bg-white/10 border border-white/20 text-[10px] tracking-widest uppercase text-amber-200 font-semibold">
-                          {item.tag}
-                        </span>
-                        <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center text-amber-300 group-hover:scale-110 group-hover:bg-amber-400 group-hover:text-brandDark transition-all duration-300">
-                          <i data-lucide={item.icon} className="w-5 h-5"></i>
-                        </div>
-                      </div>
-
-                      <h3 className="font-serif text-2xl font-semibold mb-3 group-hover:text-amber-200 transition-colors">
-                        {item.title}
-                      </h3>
-                      <p className="text-gray-200 text-sm leading-relaxed mb-8">
-                        {item.description}
-                      </p>
-                    </div>
-
-                    <div className="relative z-10 pt-4 border-t border-white/20 flex items-center justify-between">
-                      <span className="text-xs uppercase tracking-widest text-amber-300 font-semibold group-hover:translate-x-1 transition-transform inline-flex items-center gap-2">
-                        Saznaj više 
-                        <i data-lucide="chevron-right" className="w-4 h-4"></i>
-                      </span>
-                    </div>
-
-                    <div className="absolute -right-12 -bottom-12 w-40 h-40 bg-amber-400/10 rounded-full blur-2xl group-hover:bg-amber-400/20 transition-all duration-500"></div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-20 p-8 sm:p-12 rounded-3xl bg-gradient-to-r from-slate-900/90 via-brandDark/95 to-slate-900/90 border border-amber-500/40 text-center flex flex-col items-center justify-center gap-6 shadow-2xl">
-                <h3 className="font-serif text-3xl sm:text-4xl font-semibold italic text-amber-100">
-                  Spremne avanture čekaju na vas
-                </h3>
-                <p className="text-gray-200 text-sm sm:text-base max-w-2xl">
-                  Kontaktirajte lokalne vodiče, rezervišite smeštaj ili saznajte više informacija o turističkim rutama.
-                </p>
-                <a
-                  href="#kontakt"
-                  className="px-8 py-4 bg-amber-400 text-brandDark font-bold text-xs tracking-[0.2em] uppercase rounded-full hover:bg-amber-300 transition-all shadow-xl hover:scale-105"
-                >
-                  Kontaktirajte Turističku Organizaciju
-                </a>
+                    Kontaktirajte Nas
+                  </a>
+                </div>
               </div>
 
             </div>
-          </section>
+          </div>
 
-          <footer className="relative z-30 bg-black/90 border-t border-white/10 py-12 px-6 text-center text-xs text-gray-400 tracking-wider">
-            <p>© 2026 Planina Zlatar. Sva prava zadržana.</p>
+          {/* DETALJAN MODAL POP-UP */}
+          {activeModalSection && (
+            <DetailModal 
+              section={activeModalSection} 
+              onClose={() => setActiveModalSection(null)} 
+            />
+          )}
+
+          {/* FOOTER */}
+          <footer className="relative z-30 bg-black/95 border-t border-white/10 py-12 px-6">
+            <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-gray-400 tracking-wider">
+              <p>© 2026 Planina Zlatar. Sva prava zadržana.</p>
+              
+              <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-5 py-2.5 rounded-full hover:border-amber-400/40 transition-colors group">
+                <span className="text-gray-400 text-[11px] uppercase tracking-[0.2em]">Dizajn i razvoj:</span>
+                <span className="text-amber-300 font-bold uppercase tracking-[0.25em] text-[11px] group-hover:text-amber-200 transition-colors">
+                  Design by Tatovich
+                </span>
+                <span className="text-gray-500 text-[10px] font-light">| Stefan Tatković</span>
+              </div>
+            </div>
           </footer>
 
         </div>
